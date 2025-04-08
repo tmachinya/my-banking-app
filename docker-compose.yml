@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: banking-app-postgres
+    environment:
+      POSTGRES_DB: banking_app_db
+      POSTGRES_USER: banking_user
+      POSTGRES_PASSWORD: banking_pass
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d # Optional init scripts
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U banking_user -d banking_app_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - banking-network
+
+  banking-app:
+    build: .
+    container_name: banking-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/banking_app_db
+      SPRING_DATASOURCE_USERNAME: banking_user
+      SPRING_DATASOURCE_PASSWORD: banking_pass
+    networks:
+      - banking-network
+
+networks:
+  banking-network:
+
+volumes:
+  postgres-data:
