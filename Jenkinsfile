@@ -20,7 +20,7 @@ pipeline {
 
         stage('Push Docker Image') {
             steps {
-                withDockerRegistry([ credentialsId: "${DOCKER_HUB_CREDENTIALS}", url: '' ]) {
+                withDockerRegistry([ credentialsId:  'dockerhub-credentials', url: '' ]) {
                     sh 'docker push tmachinya/banking-app:latest'
                 }
             }
