@@ -2,14 +2,21 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'tmachinya/banking-app:latest'
         DOCKER_HUB_CREDENTIALS = credentials('dockerhub-credentials')
+        IMAGE_NAME = 'tmachinya/banking-app'
     }
 
     stages {
         stage('Checkout') {
             steps {
                 git branch: 'master', url: 'https://github.com/tmachinya/my-banking-app.git'
+                script {
+                    COMMIT_HASH = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    BUILD_TIMESTAMP = sh(script: "date +%Y%m%d%H%M%S", returnStdout: true).trim()
+                    IMAGE_TAG = "${BUILD_TIMESTAMP}-${COMMIT_HASH}"
+                    env.IMAGE_TAG = IMAGE_TAG
+                    env.DOCKER_IMAGE = "${IMAGE_NAME}:${IMAGE_TAG}"
+                }
             }
         }
 
@@ -29,8 +36,14 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh 'kubectl --kubeconfig=/var/jenkins_home/.kube/config apply -f k8s/deployment.yaml'
-                sh 'kubectl --kubeconfig=/var/jenkins_home/.kube/config apply -f k8s/service.yaml'
+                script {
+                    // Replace image tag in deployment.yaml dynamically
+                    sh """
+                        sed 's|image: .*$|image: $DOCKER_IMAGE|' k8s/deployment.yaml > k8s/deployment-temp.yaml
+                        kubectl --kubeconfig=/var/jenkins_home/.kube/config apply -f k8s/deployment-temp.yaml
+                        kubectl --kubeconfig=/var/jenkins_home/.kube/config apply -f k8s/service.yaml
+                    """
+                }
             }
         }
     }
