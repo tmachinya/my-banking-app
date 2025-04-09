@@ -2,48 +2,36 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "tmachinya/banking-app"
-        IMAGE_TAG = "${env.BUILD_NUMBER}" // unique tag for traceability
+        DOCKER_IMAGE = 'tmachinya/banking-app:latest'
+        DOCKER_HUB_CREDENTIALS = credentials('dockerhub-credentials')
     }
 
     stages {
-        stage('Clone repository') {
+        stage('Checkout') {
             steps {
-                checkout scm
+                git branch: 'master', url: 'https://github.com/tmachinya/my-banking-app.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -t ${IMAGE_NAME}:latest ."
-                }
+                sh 'docker build -t $DOCKER_IMAGE .'
             }
         }
 
         stage('Push Docker Image') {
             steps {
                 withDockerRegistry([ credentialsId: 'dockerhub-credentials', url: '' ]) {
-                    sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
-                    sh "docker push ${IMAGE_NAME}:latest"
+                    sh 'docker push $DOCKER_IMAGE'
                 }
             }
         }
 
-        stage('Clean up Docker images') {
+        stage('Deploy to Kubernetes') {
             steps {
-                sh "docker rmi ${IMAGE_NAME}:${IMAGE_TAG} || true"
-                sh "docker rmi ${IMAGE_NAME}:latest || true"
+                sh 'kubectl --kubeconfig=/var/jenkins_home/.kube/config apply -f k8s/deployment.yaml'
+                sh 'kubectl --kubeconfig=/var/jenkins_home/.kube/config apply -f k8s/service.yaml'
             }
-        }
-    }
-
-    post {
-        success {
-            echo 'Pipeline completed successfully! 🎉'
-        }
-        failure {
-            echo 'Pipeline failed. Please check the logs. 🚨'
         }
     }
 }
