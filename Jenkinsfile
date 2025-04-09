@@ -4,6 +4,8 @@ pipeline {
     environment {
         IMAGE_NAME = "tmachinya/banking-app"
         IMAGE_TAG = "${env.BUILD_NUMBER}" // unique tag for traceability
+        DEPLOYMENT_NAME = "banking-app"
+        KUBECONFIG_PATH = "/var/jenkins_home/.kube/config"
     }
 
     stages {
@@ -37,13 +39,25 @@ pipeline {
             }
         }
 
-         stage('Deploy to Kubernetes') {
-                    steps {
-                        sh 'kubectl --kubeconfig=/var/jenkins_home/.kube/config apply -f k8s/deployment.yaml'
-                        sh 'kubectl --kubeconfig=/var/jenkins_home/.kube/config apply -f k8s/service.yaml'
-                    }
-                }
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    sh """
+                        set -e
 
+                        # Replace image tag in deployment YAML dynamically
+                        sed 's|image: .*$|image: ${IMAGE_NAME}:${IMAGE_TAG}|' k8s/deployment.yaml > k8s/deployment-temp.yaml
+
+                        # Apply updated Deployment and Service
+                        kubectl --kubeconfig=${KUBECONFIG_PATH} apply -f k8s/deployment-temp.yaml
+                        kubectl --kubeconfig=${KUBECONFIG_PATH} apply -f k8s/service.yaml
+
+                        # Wait for rollout to complete
+                        kubectl --kubeconfig=${KUBECONFIG_PATH} rollout status deployment/${DEPLOYMENT_NAME}
+                    """
+                }
+            }
+        }
     }
 
     post {
