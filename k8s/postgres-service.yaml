@@ -9,5 +9,5 @@ spec:
     - protocol: TCP
       port: 5432
       targetPort: 5432
-      nodePort: 5434
+      nodePort: 30432
   type: NodePort
