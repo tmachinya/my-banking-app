@@ -31,8 +31,10 @@ pipeline {
         stage('Push Docker Image to Docker Hub') {
             steps {
                 echo "Pushing Docker image to Docker Hub..."
-                withDockerRegistry([credentialsId: "$DOCKER_CREDENTIALS", url: '']) {
-                    sh 'docker push $DOCKER_IMAGE:$IMAGE_TAG'
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo "DockerHub username is $DOCKER_USER"'
+                    sh 'docker login -u $DOCKER_USER -p $DOCKER_PASS'
+                    sh 'docker push tmachinya/banking-app:latest'
                 }
             }
         }
