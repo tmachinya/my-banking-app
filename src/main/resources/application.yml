@@ -11,7 +11,6 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update # Auto-create or update schema, switch to validate or none in production
-#    show-sql: true
     open-in-view: false
     properties:
       hibernate:
@@ -33,7 +32,6 @@ jwt:
 logging:
   level:
     org.springframework.security: DEBUG
-#    org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
 springdoc:
@@ -43,5 +41,3 @@ springdoc:
     path: /swagger-ui.html
     operationsSorter: method
     tagsSorter: alpha
-
-
