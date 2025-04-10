@@ -49,12 +49,11 @@ pipeline {
 
         stage('Deploy Banking App to Kubernetes') {
             steps {
-                // Replace image tag dynamically
                 sh """
-                sed 's|image: .*$|image: ${IMAGE_NAME}:${IMAGE_TAG}|' k8s/deployment.yaml > k8s/deployment-temp.yaml
-                kubectl --kubeconfig=${KUBECONFIG_PATH} apply -f k8s/deployment-temp.yaml
-                kubectl --kubeconfig=${KUBECONFIG_PATH} apply -f k8s/service.yaml
-                kubectl --kubeconfig=${KUBECONFIG_PATH} rollout status deployment/${DEPLOYMENT_NAME}
+                  sed "s|image: .*|image: ${IMAGE_NAME}:${IMAGE_TAG}|" k8s/deployment.yaml > k8s/deployment-temp.yaml
+                  kubectl --kubeconfig=${KUBECONFIG_PATH} apply -f k8s/deployment-temp.yaml
+                  kubectl --kubeconfig=${KUBECONFIG_PATH} apply -f k8s/service.yaml
+                  kubectl --kubeconfig=${KUBECONFIG_PATH} rollout status deployment/${DEPLOYMENT_NAME}
                 """
             }
         }
